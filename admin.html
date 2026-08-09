@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Veg Bite Admin</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <header class="navbar">
+    <div class="brand-wrapper">
+      <div class="brand-logo">VB</div>
+      <div class="brand-info">
+        <h1>Veg Bite Admin</h1>
+        <p>Menu & Sales Management</p>
+      </div>
+    </div>
+    <div class="top-nav-buttons">
+      <a href="index.html" class="nav-btn-admin">Back to POS</a>
+    </div>
+  </header>
+
+  <main class="admin-grid">
+    <!-- Chart Section -->
+    <section class="card">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+        <h3>Revenue Analytics</h3>
+        <select id="chartFilter" onchange="updateChart()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ede9de; font-weight: 700;">
+          <option value="daily">Daily</option>
+          <option value="weekly">Weekly</option>
+          <option value="monthly">Monthly</option>
+        </select>
+      </div>
+      <canvas id="salesChart" height="200"></canvas>
+    </section>
+
+    <!-- Today's Stats -->
+    <section class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+      <div class="stat-card">
+        <p style="color: #787d74; font-size: 0.85rem; font-weight: 700;">Total Revenue (Today)</p>
+        <h2 id="revStat" style="color: #1c201d; margin-top: 5px;">₹0</h2>
+      </div>
+      <div class="stat-card">
+        <p style="color: #787d74; font-size: 0.85rem; font-weight: 700;">Total Orders (Today)</p>
+        <h2 id="orderStat" style="color: #1c201d; margin-top: 5px;">0</h2>
+      </div>
+      <button class="btn-danger" style="grid-column: span 2;" onclick="resetDaySales()">Reset Today's Sales Counter</button>
+    </section>
+
+    <!-- Form & Menu Management -->
+    <section class="card">
+      <h3 id="formTitle">Add New Item</h3>
+      <form id="menuForm">
+        <input type="hidden" id="pId">
+        <input type="text" id="pName" placeholder="Dish Name (e.g. Paneer Roll)" required>
+        <input type="number" id="pPrice" placeholder="Price (₹)" step="1" required>
+        <input type="text" id="pCat" placeholder="Category (e.g. Snacks)" required>
+        
+        <label style="font-size: 0.85rem; margin-top: 5px; color: #787d74; font-weight: 700;">Dish Image (Auto-compressed to ~10KB):</label>
+        <input type="file" id="pImage" accept="image/*">
+        <input type="hidden" id="pImgBase64">
+
+        <div style="display: flex; gap: 10px; margin-top: 10px;">
+          <button type="submit" id="saveBtn" class="btn-primary" style="flex: 1;">Save Dish</button>
+          <button type="button" id="cancelEditBtn" onclick="resetForm()" class="btn-clear" style="display: none; width: auto;">Cancel</button>
+        </div>
+      </form>
+
+      <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+        <h3>Menu List</h3>
+        <input type="text" id="adminSearchInput" placeholder="🔍 Search menu..." oninput="renderTable()" style="padding: 6px 12px; border: 1px solid #ede9de; border-radius: 8px; font-size: 0.85rem; width: 160px;">
+      </div>
+
+      <table class="data-table" id="menuTable">
+        <thead>
+          <tr><th>Img</th><th>Dish</th><th>Price</th><th>Action</th></tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+    </section>
+  </main>
+
+  <script src="admin.js"></script>
+</body>
+</html>
