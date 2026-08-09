@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Handle Add / Edit submit
-  document.getElementById('menuForm').addEventListener('submit', (e) => {
+  document.getElementById('menuForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const id = document.getElementById('pId').value;
     const name = document.getElementById('pName').value.trim();
@@ -63,7 +63,14 @@ document.addEventListener('DOMContentLoaded', () => {
         menu[idx].cat = cat;
         if (img) menu[idx].img = img;
 
-        if (db) db.collection('menu').doc(String(id)).update(menu[idx]);
+        if (db) {
+          try {
+            await db.collection('menu').doc(String(id)).update(menu[idx]);
+          } catch (err) {
+            console.error("Firestore update failed: ", err);
+            alert("Firebase write error! Check Firestore Rules in Firebase console.");
+          }
+        }
       }
     } else {
       // Add new dish
@@ -73,7 +80,15 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       const newItem = { id: String(Date.now()), name, price, cat, img };
       menu.push(newItem);
-      if (db) db.collection('menu').doc(newItem.id).set(newItem);
+
+      if (db) {
+        try {
+          await db.collection('menu').doc(newItem.id).set(newItem);
+        } catch (err) {
+          console.error("Firestore set failed: ", err);
+          alert("Firebase write error! Check Firestore Rules in Firebase console.");
+        }
+      }
     }
 
     localStorage.setItem('vb_menu', JSON.stringify(menu));
