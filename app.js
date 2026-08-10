@@ -234,12 +234,19 @@ function processAndPrint() {
   let sum = 0;
   let receiptText = "";
 
-  // Build raw ESC/POS text ticket
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += "--------------------------------\n";
-  receiptText += `   TOKEN NO: ${state.token}\n`;
-  receiptText += `   Date: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}\n`;
+  receiptText += "TOKEN NO: " + state.token + "\n";
+  
+  const now = new Date();
+  const dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                  (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                  now.getFullYear() + " " + 
+                  now.getHours().toString().padStart(2, '0') + ":" + 
+                  now.getMinutes().toString().padStart(2, '0');
+                  
+  receiptText += "DATE: " + dateStr + "\n";
   receiptText += "--------------------------------\n";
 
   const orderItems = [];
@@ -249,17 +256,15 @@ function processAndPrint() {
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Format item lines
-    receiptText += `${i.name}\n`;
-    receiptText += `          ${i.qty} x ${i.price} = Rs.${itemTotal}\n`;
+    receiptText += i.name + "\n";
+    receiptText += "      " + i.qty + " x " + i.price + " = Rs." + itemTotal + "\n";
   });
 
   receiptText += "--------------------------------\n";
-  receiptText += `TOTAL: Rs.${sum.toFixed(2)}\n`;
+  receiptText += "TOTAL: Rs." + sum.toFixed(2) + "\n";
   receiptText += "--------------------------------\n";
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
-  // Save Sale Record
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -275,11 +280,8 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Instant Direct Print via RawBT Web Intent (Bypasses Chrome Preview Page)
-  const encodedText = encodeURIComponent(receiptText);
-  window.location.href = `intent:${encodedText}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+  window.location.href = "rawbt:" + encodeURIComponent(receiptText);
 
-  // Increment Token & Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
