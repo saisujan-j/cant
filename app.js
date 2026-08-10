@@ -232,27 +232,34 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  let itemsHTML = '';
+  let receiptText = "";
+
+  // Build raw ESC/POS text ticket
+  receiptText += "        VEG BITE\n";
+  receiptText += "     College Canteen\n";
+  receiptText += "--------------------------------\n";
+  receiptText += `   TOKEN NO: ${state.token}\n`;
+  receiptText += `   Date: ${new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}\n`;
+  receiptText += "--------------------------------\n";
+
   const orderItems = [];
 
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
-    itemsHTML += `
-      <div class="t-row">
-        <span>${i.name}</span>
-        <span>${i.qty} x ${i.price}</span>
-        <span>₹${itemTotal}</span>
-      </div>
-    `;
+
+    // Format item lines
+    receiptText += `${i.name}\n`;
+    receiptText += `          ${i.qty} x ${i.price} = Rs.${itemTotal}\n`;
   });
 
-  document.getElementById('tToken').textContent = state.token;
-  document.getElementById('tItems').innerHTML = itemsHTML;
-  document.getElementById('tTotal').textContent = sum.toFixed(2);
-  document.getElementById('tDate').textContent = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+  receiptText += "--------------------------------\n";
+  receiptText += `TOTAL: Rs.${sum.toFixed(2)}\n`;
+  receiptText += "--------------------------------\n";
+  receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
+  // Save Sale Record
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -267,8 +274,12 @@ function processAndPrint() {
   if (db) db.collection('orders').add(orderRecord);
 
   closeCartModal();
-  window.print();
 
+  // Instant Direct Print via RawBT Web Intent (Bypasses Chrome Preview Page)
+  const encodedText = encodeURIComponent(receiptText);
+  window.location.href = `intent:${encodedText}#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;`;
+
+  // Increment Token & Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
