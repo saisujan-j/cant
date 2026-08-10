@@ -85,5 +85,14 @@
   </main>
 
   <script src="admin.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(() => console.log('Offline Service Worker Registered!'))
+          .catch((err) => console.log('Service Worker Failed:', err));
+      });
+    }
+  </script>
 </body>
 </html>
