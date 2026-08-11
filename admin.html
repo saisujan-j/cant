@@ -27,9 +27,9 @@
   <main class="admin-grid">
     <!-- Chart Section -->
     <section class="card">
-      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+      <div class="chart-header">
         <h3>Revenue Analytics</h3>
-        <select id="chartFilter" onchange="updateChart()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #ede9de; font-weight: 700;">
+        <select id="chartFilter" class="chart-filter" aria-label="Revenue chart time period" onchange="updateChart()">
           <option value="daily">Daily</option>
           <option value="weekly">Weekly</option>
           <option value="monthly">Monthly</option>
@@ -39,16 +39,16 @@
     </section>
 
     <!-- Today's Stats -->
-    <section class="card" style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+    <section class="card stats-card">
       <div class="stat-card">
-        <p style="color: #787d74; font-size: 0.85rem; font-weight: 700;">Total Revenue (Today)</p>
-        <h2 id="revStat" style="color: #1c201d; margin-top: 5px;">₹0</h2>
+        <p class="stat-label">Total Revenue (Today)</p>
+        <h2 id="revStat" class="revenue-value">₹0</h2>
       </div>
       <div class="stat-card">
-        <p style="color: #787d74; font-size: 0.85rem; font-weight: 700;">Total Orders (Today)</p>
-        <h2 id="orderStat" style="color: #1c201d; margin-top: 5px;">0</h2>
+        <p class="stat-label">Total Orders (Today)</p>
+        <h2 id="orderStat">0</h2>
       </div>
-      <button class="btn-danger" style="grid-column: span 2;" onclick="resetDaySales()">Reset Today's Sales Counter</button>
+      <button type="button" class="btn-danger reset-sales-btn" onclick="resetDaySales()">Reset Today's Sales Counter</button>
     </section>
 
     <!-- Form & Menu Management -->
@@ -60,19 +60,19 @@
         <input type="number" id="pPrice" placeholder="Price (₹)" step="1" required>
         <input type="text" id="pCat" placeholder="Category (e.g. Snacks)" required>
         
-        <label style="font-size: 0.85rem; margin-top: 5px; color: #787d74; font-weight: 700;">Dish Image (Auto-compressed to ~10KB):</label>
-        <input type="file" id="pImage" accept="image/*">
+        <label class="image-label">Dish Image (Auto-compressed to ~10KB):</label>
+        <input type="file" id="pImage" accept="image/*" aria-label="Dish image">
         <input type="hidden" id="pImgBase64">
 
-        <div style="display: flex; gap: 10px; margin-top: 10px;">
-          <button type="submit" id="saveBtn" class="btn-primary" style="flex: 1;">Save Dish</button>
-          <button type="button" id="cancelEditBtn" onclick="resetForm()" class="btn-clear" style="display: none; width: auto;">Cancel</button>
+        <div class="form-actions">
+          <button type="submit" id="saveBtn" class="btn-primary form-save-btn">Save Dish</button>
+          <button type="button" id="cancelEditBtn" onclick="resetForm()" class="btn-clear form-cancel-btn">Cancel</button>
         </div>
       </form>
 
-      <div style="margin-top: 24px; display: flex; justify-content: space-between; align-items: center; gap: 10px;">
+      <div class="menu-list-header">
         <h3>Menu List</h3>
-        <input type="text" id="adminSearchInput" placeholder="🔍 Search menu..." oninput="renderTable()" style="padding: 6px 12px; border: 1px solid #ede9de; border-radius: 8px; font-size: 0.85rem; width: 160px;">
+        <input type="text" id="adminSearchInput" class="chart-filter" placeholder="🔍 Search menu..." oninput="renderTable()">
       </div>
 
       <table class="data-table" id="menuTable">
