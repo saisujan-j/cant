@@ -232,12 +232,15 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n"; // Exact 32-char line width for 58mm
+  const line = "--------------------------------\n"; // 32 chars width for 58mm paper
   let receiptText = "";
 
+  // 1. Header
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += line;
+  
+  // 2. Token & Date
   receiptText += "TOKEN NO: " + state.token + "\n";
   
   const now = new Date();
@@ -252,35 +255,32 @@ function processAndPrint() {
 
   const orderItems = [];
 
+  // 3. Item Lines
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    let name = i.name;
-    if (name.length > 14) name = name.substring(0, 14);
+    // Item Name
+    receiptText += i.name + "\n";
 
-    const qtyStr = i.qty + "x" + i.price;
-    const totalStr = "Rs." + itemTotal;
-
-    // Fixed-column math for 32-character thermal paper width
-    const nameCol = name.padEnd(14, ' ');
-    const qtyCol = qtyStr.padStart(8, ' ');
-    const priceCol = totalStr.padStart(10, ' ');
-
-    receiptText += nameCol + qtyCol + priceCol + "\n";
+    // Sub-line: "  1 x 65 = Rs.65" (right-aligned to fit 32 chars)
+    const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
+    const padSpaces = Math.max(1, 32 - detailStr.length);
+    receiptText += " ".repeat(padSpaces) + detailStr + "\n";
   });
 
   receiptText += line;
   
+  // 4. Total Line
   const totalVal = "Rs." + sum.toFixed(2);
-  const totalPad = 32 - "TOTAL:".length - totalVal.length;
-  receiptText += "TOTAL:" + " ".repeat(Math.max(1, totalPad)) + totalVal + "\n";
+  const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
+  receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
   
   receiptText += line;
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
-  // Local Storage Save
+  // Record Sales Data
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -296,8 +296,9 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Send Direct Text Payload to RawBT
-  window.location.href = "rawbt:" + encodeURIComponent(receiptText);
+  // Send Direct Light Plain-Text Stream via RawBT Intent
+  const encodedText = encodeURIComponent(receiptText);
+  window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
 
   // Increment Token & Reset State
   state.token++;
