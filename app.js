@@ -232,12 +232,13 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n"; // 32 chars width for 58mm
+  // Use 28 characters max width to prevent line wrapping on 58mm paper
+  const line = "----------------------------\n"; 
   let receiptText = "";
 
-  // 1. Receipt Header
-  receiptText += "        VEG BITE\n";
-  receiptText += "     College Canteen\n";
+  // 1. Header (Centered within 28 columns)
+  receiptText += "          VEG BITE          \n";
+  receiptText += "      College Canteen       \n";
   receiptText += line;
   
   // 2. Token & Date
@@ -246,7 +247,7 @@ function processAndPrint() {
   const now = new Date();
   const dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                   (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                  now.getFullYear() + ", " + 
+                  now.getFullYear() + " " + 
                   now.getHours().toString().padStart(2, '0') + ":" + 
                   now.getMinutes().toString().padStart(2, '0');
                   
@@ -255,32 +256,32 @@ function processAndPrint() {
 
   const orderItems = [];
 
-  // 3. Item Formatting
+  // 3. Item Layout (Two-line format: Dish on line 1, Qty x Price = Total right-aligned on line 2)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Dish Name on line 1
+    // Line 1: Dish Name
     receiptText += i.name + "\n";
 
-    // Qty x Price = Total on line 2 (Right-aligned across 32 cols)
+    // Line 2: "1 x 45 = Rs.45" aligned to the right (28 chars total width)
     const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
-    const padSpaces = Math.max(1, 32 - detailStr.length);
-    receiptText += " ".repeat(padSpaces) + detailStr + "\n";
+    const pad = Math.max(0, 28 - detailStr.length);
+    receiptText += " ".repeat(pad) + detailStr + "\n";
   });
 
   receiptText += line;
   
-  // 4. Total Line
+  // 4. Total Row (28 chars total)
   const totalVal = "Rs." + sum.toFixed(2);
-  const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
+  const totalPad = Math.max(0, 28 - "TOTAL:".length - totalVal.length);
   receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
   
   receiptText += line;
-  receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
+  receiptText += " *** Thank You! Visit Again *** \n\n\n\n";
 
-  // 5. Save Sales Data
+  // Record Sales Data
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -296,15 +297,11 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // 6. Direct Form Post to RawBT (Bypasses Chrome Print Dialog completely)
-  const form = document.createElement('form');
-  form.method = 'GET';
-  form.action = 'intent:' + encodeURIComponent(receiptText) + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;';
-  document.body.appendChild(form);
-  form.submit();
-  document.body.removeChild(form);
+  // Send Direct Light Plain-Text Stream via RawBT
+  const encodedText = encodeURIComponent(receiptText);
+  window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;";
 
-  // 7. Increment Token & Reset
+  // Increment Token & Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
