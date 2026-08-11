@@ -232,12 +232,15 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n";
+  const line = "--------------------------------\n"; // Standard 32-col width for 58mm
   let receiptText = "";
 
+  // 1. Header
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += line;
+  
+  // 2. Token & Date
   receiptText += "TOKEN NO: " + state.token + "\n";
   
   const now = new Date();
@@ -252,21 +255,28 @@ function processAndPrint() {
 
   const orderItems = [];
 
+  // 3. Item Alignment (Prevents line wrapping & overlapping)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
+    // Line 1: Item Name
     receiptText += i.name + "\n";
+
+    // Line 2: Quantity & Price right-aligned cleanly
     const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
     const padSpaces = Math.max(1, 32 - detailStr.length);
     receiptText += " ".repeat(padSpaces) + detailStr + "\n";
   });
 
   receiptText += line;
+  
+  // 4. Total Row
   const totalVal = "Rs." + sum.toFixed(2);
   const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
   receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
+  
   receiptText += line;
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
@@ -286,8 +296,8 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // DIRECT RAWBT URL LAUNCH (Bypasses Chrome Print Preview completely)
- window.location.href = "intent:" + encodeURIComponent(receiptText) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+  // Direct RawBT URL Scheme (Sends ~200 bytes raw text instead of 29KB image)
+  window.location.href = "rawbt:" + encodeURIComponent(receiptText);
 
   // Increment Token & Reset State
   state.token++;
