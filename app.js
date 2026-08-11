@@ -232,58 +232,27 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  // 24 characters maximum width so NOTHING ever wraps
-  const line = "------------------------\n"; 
-  let receiptText = "";
-
-  // 1. Header (Centered within 24 spaces)
-  receiptText += "        VEG BITE        \n";
-  receiptText += "    College Canteen     \n";
-  receiptText += line;
-  
-  // 2. Token & Date
-  receiptText += "TOKEN NO: " + state.token + "\n";
-  
-  const now = new Date();
-  const dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
-                  (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
-                  now.getFullYear() + " " + 
-                  now.getHours().toString().padStart(2, '0') + ":" + 
-                  now.getMinutes().toString().padStart(2, '0');
-                  
-  receiptText += "DATE: " + dateStr + "\n";
-  receiptText += line;
-
+  let itemsHTML = '';
   const orderItems = [];
 
-  // 3. Item Formatting (FORCED TWO-LINE STRUCTURE)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
-
-    // LINE 1: Dish Name ONLY (e.g. "Uttappa")
-    receiptText += i.name + "\n";
-
-    // LINE 2: "  1 x 45         Rs.45" (Padded across 24 columns)
-    const qtyStr = "  " + i.qty + " x " + i.price;
-    const priceStr = "Rs." + itemTotal;
-    const spaceCount = Math.max(1, 24 - qtyStr.length - priceStr.length);
-    
-    receiptText += qtyStr + " ".repeat(spaceCount) + priceStr + "\n";
+    itemsHTML += `
+      <div class="t-row">
+        <span>${i.name}</span>
+        <span>${i.qty} x ${i.price}</span>
+        <span>₹${itemTotal}</span>
+      </div>
+    `;
   });
 
-  receiptText += line;
-  
-  // 4. Total Line
-  const totalVal = "Rs." + sum.toFixed(2);
-  const totalSpace = Math.max(1, 24 - "TOTAL:".length - totalVal.length);
-  receiptText += "TOTAL:" + " ".repeat(totalSpace) + totalVal + "\n";
-  
-  receiptText += line;
-  receiptText += "  *** Thank You! ***  \n\n\n\n";
+  document.getElementById('tToken').textContent = state.token;
+  document.getElementById('tItems').innerHTML = itemsHTML;
+  document.getElementById('tTotal').textContent = sum.toFixed(2);
+  document.getElementById('tDate').textContent = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
 
-  // Record Sales Data
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -298,12 +267,8 @@ function processAndPrint() {
   if (db) db.collection('orders').add(orderRecord);
 
   closeCartModal();
+  window.print();
 
-  // Send Direct Intent to RawBT
-  const encodedText = encodeURIComponent(receiptText);
-  window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;";
-
-  // Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
