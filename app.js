@@ -232,18 +232,14 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n"; // 32 chars width
+  const line = "--------------------------------\n"; // Exact 32-char line width for 58mm
   let receiptText = "";
 
-  // Receipt Header
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += line;
-  
-  // Token Number
   receiptText += "TOKEN NO: " + state.token + "\n";
   
-  // Clean Date & Time Format
   const now = new Date();
   const dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
                   (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
@@ -256,36 +252,35 @@ function processAndPrint() {
 
   const orderItems = [];
 
-  // Items Formatting (Truncates long names to fit 32 columns cleanly)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
     let name = i.name;
-    if (name.length > 15) name = name.substring(0, 15);
+    if (name.length > 14) name = name.substring(0, 14);
 
-    const qtyPrice = i.qty + " x " + i.price;
+    const qtyStr = i.qty + "x" + i.price;
     const totalStr = "Rs." + itemTotal;
 
-    // Pad spaces across 32 columns
-    const pad1 = Math.max(1, 16 - name.length);
-    const pad2 = Math.max(1, 16 - qtyPrice.length - totalStr.length);
+    // Fixed-column math for 32-character thermal paper width
+    const nameCol = name.padEnd(14, ' ');
+    const qtyCol = qtyStr.padStart(8, ' ');
+    const priceCol = totalStr.padStart(10, ' ');
 
-    receiptText += name + " ".repeat(pad1) + qtyPrice + " ".repeat(pad2) + totalStr + "\n";
+    receiptText += nameCol + qtyCol + priceCol + "\n";
   });
 
   receiptText += line;
   
-  // Total Row
   const totalVal = "Rs." + sum.toFixed(2);
-  const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
-  receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
+  const totalPad = 32 - "TOTAL:".length - totalVal.length;
+  receiptText += "TOTAL:" + " ".repeat(Math.max(1, totalPad)) + totalVal + "\n";
   
   receiptText += line;
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
-  // Record Sales
+  // Local Storage Save
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -301,7 +296,7 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Send Direct Text to RawBT
+  // Send Direct Text Payload to RawBT
   window.location.href = "rawbt:" + encodeURIComponent(receiptText);
 
   // Increment Token & Reset State
