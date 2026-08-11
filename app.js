@@ -232,13 +232,13 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  // Use 28 characters max width to prevent line wrapping on 58mm paper
-  const line = "----------------------------\n"; 
+  // 24 chars line width guarantees zero margin overflow
+  const line = "------------------------\n"; 
   let receiptText = "";
 
-  // 1. Header (Centered within 28 columns)
-  receiptText += "          VEG BITE          \n";
-  receiptText += "      College Canteen       \n";
+  // 1. Header
+  receiptText += "        VEG BITE        \n";
+  receiptText += "    College Canteen     \n\n";
   receiptText += line;
   
   // 2. Token & Date
@@ -251,37 +251,41 @@ function processAndPrint() {
                   now.getHours().toString().padStart(2, '0') + ":" + 
                   now.getMinutes().toString().padStart(2, '0');
                   
-  receiptText += "Date: " + dateStr + "\n";
+  receiptText += "DATE: " + dateStr + "\n";
   receiptText += line;
 
   const orderItems = [];
 
-  // 3. Item Layout (Two-line format: Dish on line 1, Qty x Price = Total right-aligned on line 2)
+  // 3. Item Formatting
+  // Line 1: Item Name (left aligned)
+  // Line 2: "   1 x 45       Rs.45" (clearly spaced out across 24 columns)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Line 1: Dish Name
+    // Dish Name on its own line
     receiptText += i.name + "\n";
 
-    // Line 2: "1 x 45 = Rs.45" aligned to the right (28 chars total width)
-    const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
-    const pad = Math.max(0, 28 - detailStr.length);
-    receiptText += " ".repeat(pad) + detailStr + "\n";
+    // Sub-line: Quantity on left, Amount on right
+    const qtyStr = "   " + i.qty + " x " + i.price;
+    const priceStr = "Rs." + itemTotal;
+    const spaceCount = Math.max(1, 24 - qtyStr.length - priceStr.length);
+    
+    receiptText += qtyStr + " ".repeat(spaceCount) + priceStr + "\n";
   });
 
   receiptText += line;
   
-  // 4. Total Row (28 chars total)
+  // 4. Total Line
   const totalVal = "Rs." + sum.toFixed(2);
-  const totalPad = Math.max(0, 28 - "TOTAL:".length - totalVal.length);
-  receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
+  const totalSpace = Math.max(1, 24 - "TOTAL:".length - totalVal.length);
+  receiptText += "TOTAL:" + " ".repeat(totalSpace) + totalVal + "\n";
   
   receiptText += line;
-  receiptText += " *** Thank You! Visit Again *** \n\n\n\n";
+  receiptText += "  *** Thank You! ***  \n\n\n\n";
 
-  // Record Sales Data
+  // Save Sales Record
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -297,11 +301,11 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Send Direct Light Plain-Text Stream via RawBT
+  // Direct Intent to RawBT
   const encodedText = encodeURIComponent(receiptText);
   window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;";
 
-  // Increment Token & Reset State
+  // Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
