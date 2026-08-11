@@ -232,13 +232,13 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  // 24 chars line width guarantees zero margin overflow
+  // 24 characters maximum width so NOTHING ever wraps
   const line = "------------------------\n"; 
   let receiptText = "";
 
-  // 1. Header
+  // 1. Header (Centered within 24 spaces)
   receiptText += "        VEG BITE        \n";
-  receiptText += "    College Canteen     \n\n";
+  receiptText += "    College Canteen     \n";
   receiptText += line;
   
   // 2. Token & Date
@@ -256,19 +256,17 @@ function processAndPrint() {
 
   const orderItems = [];
 
-  // 3. Item Formatting
-  // Line 1: Item Name (left aligned)
-  // Line 2: "   1 x 45       Rs.45" (clearly spaced out across 24 columns)
+  // 3. Item Formatting (FORCED TWO-LINE STRUCTURE)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Dish Name on its own line
+    // LINE 1: Dish Name ONLY (e.g. "Uttappa")
     receiptText += i.name + "\n";
 
-    // Sub-line: Quantity on left, Amount on right
-    const qtyStr = "   " + i.qty + " x " + i.price;
+    // LINE 2: "  1 x 45         Rs.45" (Padded across 24 columns)
+    const qtyStr = "  " + i.qty + " x " + i.price;
     const priceStr = "Rs." + itemTotal;
     const spaceCount = Math.max(1, 24 - qtyStr.length - priceStr.length);
     
@@ -285,7 +283,7 @@ function processAndPrint() {
   receiptText += line;
   receiptText += "  *** Thank You! ***  \n\n\n\n";
 
-  // Save Sales Record
+  // Record Sales Data
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -301,7 +299,7 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Direct Intent to RawBT
+  // Send Direct Intent to RawBT
   const encodedText = encodeURIComponent(receiptText);
   window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;";
 
