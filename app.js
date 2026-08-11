@@ -232,7 +232,7 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n"; // 32 chars width for 58mm paper
+  const line = "-----------------------------\n"; // 32 chars width for 58mm paper
   let receiptText = "";
 
   // 1. Header
