@@ -232,8 +232,9 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
+  
+  // Clean ASCII ESC/POS string format
   let receiptText = "";
-
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += "--------------------------------\n";
@@ -265,6 +266,7 @@ function processAndPrint() {
   receiptText += "--------------------------------\n";
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
+  // Local Storage & Cloud Sync
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -280,8 +282,10 @@ function processAndPrint() {
 
   closeCartModal();
 
+  // Send Direct Text Stream to RawBT via URL Scheme
   window.location.href = "rawbt:" + encodeURIComponent(receiptText);
 
+  // Increment Token & Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
