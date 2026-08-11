@@ -232,10 +232,10 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "--------------------------------\n"; // Standard 32-col width for 58mm
+  const line = "--------------------------------\n"; // 32 chars width for 58mm
   let receiptText = "";
 
-  // 1. Header
+  // 1. Receipt Header
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += line;
@@ -255,16 +255,16 @@ function processAndPrint() {
 
   const orderItems = [];
 
-  // 3. Item Alignment (Prevents line wrapping & overlapping)
+  // 3. Item Formatting
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Line 1: Item Name
+    // Dish Name on line 1
     receiptText += i.name + "\n";
 
-    // Line 2: Quantity & Price right-aligned cleanly
+    // Qty x Price = Total on line 2 (Right-aligned across 32 cols)
     const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
     const padSpaces = Math.max(1, 32 - detailStr.length);
     receiptText += " ".repeat(padSpaces) + detailStr + "\n";
@@ -272,7 +272,7 @@ function processAndPrint() {
 
   receiptText += line;
   
-  // 4. Total Row
+  // 4. Total Line
   const totalVal = "Rs." + sum.toFixed(2);
   const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
   receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
@@ -280,7 +280,7 @@ function processAndPrint() {
   receiptText += line;
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
-  // Record Sales
+  // 5. Save Sales Data
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -296,10 +296,15 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Direct RawBT URL Scheme (Sends ~200 bytes raw text instead of 29KB image)
-  window.location.href = "rawbt:" + encodeURIComponent(receiptText);
+  // 6. Direct Form Post to RawBT (Bypasses Chrome Print Dialog completely)
+  const form = document.createElement('form');
+  form.method = 'GET';
+  form.action = 'intent:' + encodeURIComponent(receiptText) + '#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;S.browser_fallback_url=https://rawbt.app/;end;';
+  document.body.appendChild(form);
+  form.submit();
+  document.body.removeChild(form);
 
-  // Increment Token & Reset State
+  // 7. Increment Token & Reset
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
