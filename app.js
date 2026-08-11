@@ -232,15 +232,12 @@ function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  const line = "-----------------------------\n"; // 32 chars width for 58mm paper
+  const line = "--------------------------------\n";
   let receiptText = "";
 
-  // 1. Header
   receiptText += "        VEG BITE\n";
   receiptText += "     College Canteen\n";
   receiptText += line;
-  
-  // 2. Token & Date
   receiptText += "TOKEN NO: " + state.token + "\n";
   
   const now = new Date();
@@ -255,32 +252,25 @@ function processAndPrint() {
 
   const orderItems = [];
 
-  // 3. Item Lines
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
 
-    // Item Name
     receiptText += i.name + "\n";
-
-    // Sub-line: "  1 x 65 = Rs.65" (right-aligned to fit 32 chars)
     const detailStr = i.qty + " x " + i.price + " = Rs." + itemTotal;
     const padSpaces = Math.max(1, 32 - detailStr.length);
     receiptText += " ".repeat(padSpaces) + detailStr + "\n";
   });
 
   receiptText += line;
-  
-  // 4. Total Line
   const totalVal = "Rs." + sum.toFixed(2);
   const totalPad = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
   receiptText += "TOTAL:" + " ".repeat(totalPad) + totalVal + "\n";
-  
   receiptText += line;
   receiptText += "  *** Thank You! Visit Again ***\n\n\n\n";
 
-  // Record Sales Data
+  // Record Sales
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -296,9 +286,8 @@ function processAndPrint() {
 
   closeCartModal();
 
-  // Send Direct Light Plain-Text Stream via RawBT Intent
-  const encodedText = encodeURIComponent(receiptText);
-  window.location.href = "intent:" + encodedText + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
+  // DIRECT RAWBT URL LAUNCH (Bypasses Chrome Print Preview completely)
+ window.location.href = "intent:" + encodeURIComponent(receiptText) + "#Intent;scheme=rawbt;package=ru.a402d.rawbtprinter;end;";
 
   // Increment Token & Reset State
   state.token++;
