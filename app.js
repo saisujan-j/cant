@@ -228,31 +228,126 @@ function closeCartModal() {
   document.getElementById('cartModal').classList.remove('active');
 }
 
-function processAndPrint() {
+let bluetoothDevice = null;
+let printCharacteristic = null;
+
+// Connect directly to Ezo 58D via Web Bluetooth
+async function connectPrinter() {
+  try {
+    if (bluetoothDevice && bluetoothDevice.gatt.connected && printCharacteristic) {
+      return printCharacteristic;
+    }
+
+    bluetoothDevice = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [
+        '000018f0-0000-1000-8000-00805f9b34fb', // Standard POS Bluetooth Service
+        'e7810a71-73ae-499d-8c15-faa9aef0c3f2',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455'
+      ]
+    });
+
+    const server = await bluetoothDevice.gatt.connect();
+    const services = await server.getPrimaryServices();
+    
+    for (const service of services) {
+      const characteristics = await service.getCharacteristics();
+      for (const char of characteristics) {
+        if (char.properties.write || char.properties.writeWithoutResponse) {
+          printCharacteristic = char;
+          return printCharacteristic;
+        }
+      }
+    }
+  } catch (error) {
+    console.error('Bluetooth connection failed:', error);
+    throw error;
+  }
+}
+
+// Convert text string to raw ESC/POS byte array
+function createEscPosBuffer(text) {
+  const encoder = new TextEncoder();
+  const rawBytes = encoder.encode(text);
+  // ESC @ (Initialize printer) + text + line feeds
+  const init = new Uint8Array([0x1B, 0x40]);
+  const cutFeed = new Uint8Array([0x0A, 0x0A, 0x0A, 0x0A]);
+  
+  const combined = new Uint8Array(init.length + rawBytes.length + cutFeed.length);
+  combined.set(init, 0);
+  combined.set(rawBytes, init.length);
+  combined.set(cutFeed, init.length + rawBytes.length);
+  return combined;
+}
+
+// Main Process & Instant Print Function
+async function processAndPrint() {
   if (state.cart.size === 0) return alert('Your cart is empty!');
 
   let sum = 0;
-  let itemsHTML = '';
+  const line = "--------------------------------\n"; // 32 characters
+  let receiptText = "";
+
+  // 1. Header (Centered)
+  receiptText += "            VEG BITE            \n";
+  receiptText += "        College Canteen         \n";
+  receiptText += line;
+  
+  // 2. Token & Date
+  receiptText += "TOKEN NO: " + state.token + "\n";
+  
+  const now = new Date();
+  const dateStr = now.getDate().toString().padStart(2, '0') + '/' + 
+                  (now.getMonth() + 1).toString().padStart(2, '0') + '/' + 
+                  now.getFullYear() + " " + 
+                  now.getHours().toString().padStart(2, '0') + ":" + 
+                  now.getMinutes().toString().padStart(2, '0');
+                  
+  receiptText += "DATE: " + dateStr + "\n";
+  receiptText += line;
+
   const orderItems = [];
 
+  // 3. Item Layout (Two-line format: Dish Name on top, Qty x Price & Amt below)
   state.cart.forEach(i => {
     const itemTotal = i.qty * i.price;
     sum += itemTotal;
     orderItems.push({ name: i.name, price: i.price, qty: i.qty });
-    itemsHTML += `
-      <div class="t-row">
-        <span>${i.name}</span>
-        <span>${i.qty} x ${i.price}</span>
-        <span>₹${itemTotal}</span>
-      </div>
-    `;
+
+    receiptText += i.name + "\n";
+    const qtyStr = "  " + i.qty + " x " + i.price;
+    const priceStr = "Rs." + itemTotal;
+    const spaceCount = Math.max(1, 32 - qtyStr.length - priceStr.length);
+    receiptText += qtyStr + " ".repeat(spaceCount) + priceStr + "\n";
   });
 
-  document.getElementById('tToken').textContent = state.token;
-  document.getElementById('tItems').innerHTML = itemsHTML;
-  document.getElementById('tTotal').textContent = sum.toFixed(2);
-  document.getElementById('tDate').textContent = new Date().toLocaleString([], { dateStyle: 'short', timeStyle: 'short' });
+  receiptText += line;
+  
+  // 4. Total Line
+  const totalVal = "Rs." + sum.toFixed(2);
+  const totalSpace = Math.max(1, 32 - "TOTAL:".length - totalVal.length);
+  receiptText += "TOTAL:" + " ".repeat(totalSpace) + totalVal + "\n";
+  
+  receiptText += line;
+  receiptText += "    *** Thank You! Visit Again ***    \n";
 
+  // 5. Send Raw Bytes Directly via Web Bluetooth (Under 200 bytes!)
+  try {
+    const char = await connectPrinter();
+    const data = createEscPosBuffer(receiptText);
+    
+    // Send packets of 100 bytes to avoid buffer overflow
+    const chunkSize = 100;
+    for (let i = 0; i < data.length; i += chunkSize) {
+      const chunk = data.slice(i, i + chunkSize);
+      await char.writeValue(chunk);
+    }
+  } catch (err) {
+    alert("Could not connect to printer. Please turn on Bluetooth and try again.");
+    return;
+  }
+
+  // 6. Save Record
   const orderRecord = {
     token: state.token,
     items: orderItems,
@@ -267,8 +362,8 @@ function processAndPrint() {
   if (db) db.collection('orders').add(orderRecord);
 
   closeCartModal();
-  window.print();
 
+  // Increment Token & Reset State
   state.token++;
   localStorage.setItem('vb_token', state.token);
   state.cart.clear();
